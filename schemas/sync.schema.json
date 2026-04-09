@@ -38,6 +38,25 @@
     }
   },
 
+  "allOf": [
+    {
+      "if": {
+        "properties": { "granularity": { "const": "ayah" } }
+      },
+      "then": {
+        "properties": {
+          "timeline": {
+            "items": {
+              "properties": {
+                "wordRange": { "type": "null" }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+
   "$defs": {
 
     "segmentId": {
@@ -76,12 +95,26 @@
       }
     },
 
+    "recitationRef": {
+      "description": "A polymorphic reference identifying the Quranic content recited in this event. Discriminated by the optional 'type' field. Defaults to 'ayah' semantics when 'type' is absent.",
+      "oneOf": [
+        { "$ref": "#/$defs/ayahRef" },
+        { "$ref": "#/$defs/istiadhaRef" },
+        { "$ref": "#/$defs/tasdiqRef" }
+      ]
+    },
+
     "ayahRef": {
       "type": "object",
-      "description": "A reference to a specific Ayah by surah number and ayah number within that surah.",
+      "description": "A reference to a specific Ayah. 'type' MAY be omitted or set to 'ayah'. 'surah' and 'ayah' are REQUIRED. 'ayah: 0' denotes the unnumbered Basmalah preceding Surahs 2–114 (except Surah 9, which has no Basmalah).",
       "required": ["surah", "ayah"],
       "additionalProperties": false,
       "properties": {
+        "type": {
+          "type": "string",
+          "const": "ayah",
+          "description": "Optional type discriminator. If present, MUST be 'ayah'."
+        },
         "surah": {
           "type": "integer",
           "description": "Surah number. MUST be in the range [1, 114].",
@@ -90,8 +123,34 @@
         },
         "ayah": {
           "type": "integer",
-          "description": "Ayah number within the surah. MUST be >= 1. Producers SHOULD validate against the known ayah count for the given surah.",
-          "minimum": 1
+          "description": "Ayah number within the surah. MUST be >= 0. ayah: 0 is reserved for the unnumbered Basmalah. ayah: 1 is the first numbered verse. Producers SHOULD validate against the known Ayah count for the given surah.",
+          "minimum": 0
+        }
+      }
+    },
+
+    "istiadhaRef": {
+      "type": "object",
+      "description": "Marks the Isti'adha (أعوذ بالله من الشيطان الرجيم). This is a liturgical opening formula, not a numbered Ayah. No surah or ayah fields are permitted.",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "istiadha"
+        }
+      }
+    },
+
+    "tasdiqRef": {
+      "type": "object",
+      "description": "Marks the Tasdiq (صدق الله العظيم), the closing affirmation recited at the end of a recitation. Not a numbered Ayah. No surah or ayah fields are permitted.",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "tasdiq"
         }
       }
     },
@@ -129,8 +188,8 @@
           "maxLength": 64
         },
         "ref": {
-          "$ref": "#/$defs/ayahRef",
-          "description": "The Quranic text reference (surah + ayah) for this event."
+          "$ref": "#/$defs/recitationRef",
+          "description": "The Quranic content reference for this event. See $defs/recitationRef for the polymorphic type definition."
         },
         "segmentIds": {
           "type": "array",

@@ -123,16 +123,77 @@ The `timeline` array is an ordered sequence of **events**. The order of events i
 | `segmentIds` | `array of string` | MUST | Ordered list of segment IDs whose audio, played in sequence, constitutes this event's audio. **MUST** contain at least one entry. Each ID **MUST** correspond to an entry in `segments`. |
 | `wordRange` | `object` or `null` | MUST | Word-level granularity. See §5.2. Set to `null` if this archive uses `"ayah"` granularity only. |
 
-### 5.1 The `ref` Object (Ayah Reference)
+### 5.1 The `ref` Object (Polymorphic Recitation Reference)
+
+The `ref` field is a **polymorphic object** discriminated by the optional `type` field. It identifies *what* was recited in a given timeline event — either a specific Ayah, the opening Isti'adha formula, or the closing Tasdiq formula.
+
+Three types are defined:
+
+| `type` value | Meaning | `surah` / `ayah` |
+|---|---|---|
+| `"ayah"` (or omitted) | A specific Ayah or unnumbered Basmalah | REQUIRED |
+| `"istiadha"` | أعوذ بالله من الشيطان الرجيم | MUST NOT be present |
+| `"tasdiq"` | صدق الله العظيم | MUST NOT be present |
+
+#### Type: `"ayah"` (default)
+
+The `type` field **MAY** be omitted; absence is equivalent to `"ayah"`. Both `surah` and `ayah` **MUST** be present.
 
 ```json
 { "surah": 2, "ayah": 255 }
+{ "type": "ayah", "surah": 2, "ayah": 255 }
 ```
 
 | Field | Type | Required | Description |
 |---|---|---|---|
+| `type` | `"ayah"` | MAY | Discriminator. If omitted, `"ayah"` is implied. |
 | `surah` | `integer` | MUST | Surah number. **MUST** be in the range [1, 114]. |
-| `ayah` | `integer` | MUST | Ayah number within the surah. **MUST** be ≥ 1. Producers **SHOULD** validate against the known Ayah count for the given surah. |
+| `ayah` | `integer` | MUST | Ayah number within the surah. **MUST** be ≥ 0. See Basmalah rules below. |
+
+**Basmalah (`ayah: 0`) Rules:**
+
+The value `ayah: 0` is reserved exclusively for the unnumbered Basmalah (بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ). The following rules apply:
+
+- **Surah 1 (Al-Fatihah):** The Basmalah is the first numbered verse. It **MUST** be encoded as `{ "surah": 1, "ayah": 1 }`. Using `ayah: 0` for Surah 1 is **invalid**.
+- **Surahs 2–114 (except Surah 9):** The Basmalah precedes the Surah but is not assigned a verse number in the Uthmani text. It **MUST** be encoded as `{ "surah": N, "ayah": 0 }`.
+- **Surah 9 (At-Tawbah):** Has no Basmalah. The first recited verse is `{ "surah": 9, "ayah": 1 }`. Producers **MUST NOT** include an `ayah: 0` event for Surah 9.
+
+#### Type: `"istiadha"`
+
+The Isti'adha (أعوذ بالله من الشيطان الرجيم) is a liturgical opening formula. It is not a numbered Ayah. When a producer wishes to synchronize the Isti'adha audio span, they **MUST** use this type. No `surah` or `ayah` fields are permitted.
+
+```json
+{ "type": "istiadha" }
+```
+
+#### Type: `"tasdiq"`
+
+The Tasdiq (صدق الله العظيم) is the closing affirmation recited at the end of a recitation session. It is not a numbered Ayah. No `surah` or `ayah` fields are permitted.
+
+```json
+{ "type": "tasdiq" }
+```
+
+#### Combined Example
+
+The following `timeline` excerpt shows a complete recitation opening (Isti'adha → Basmalah of Surah 2 → first Ayah) followed by a closing Tasdiq:
+
+```json
+{
+  "segments": [
+    { "id": "seg-istiadha",  "startMs": 0,     "endMs": 4100  },
+    { "id": "seg-basmala-2", "startMs": 4100,  "endMs": 7400  },
+    { "id": "seg-2-1",       "startMs": 7400,  "endMs": 14200 },
+    { "id": "seg-tasdiq",    "startMs": 14200, "endMs": 18000 }
+  ],
+  "timeline": [
+    { "eventId": "evt-istiadha",  "ref": { "type": "istiadha" },                       "segmentIds": ["seg-istiadha"],  "wordRange": null },
+    { "eventId": "evt-basmala-2", "ref": { "type": "ayah", "surah": 2, "ayah": 0 },   "segmentIds": ["seg-basmala-2"], "wordRange": null },
+    { "eventId": "evt-2-1",       "ref": { "type": "ayah", "surah": 2, "ayah": 1 },   "segmentIds": ["seg-2-1"],       "wordRange": null },
+    { "eventId": "evt-tasdiq",    "ref": { "type": "tasdiq" },                         "segmentIds": ["seg-tasdiq"],    "wordRange": null }
+  ]
+}
+```
 
 ### 5.2 The `wordRange` Object (Optional Word-Level Granularity)
 
@@ -195,17 +256,22 @@ A reciter recites words 0–4 of Ayah 10, then repeats words 3–4 before contin
 }
 ```
 
-### 6.3 Single Segment Shared Across Multiple Timeline Events
+### 6.3 Audio Reuse for Legacy/Studio Optimization
 
-A reciter recites the basmala once; this single audio segment functions as both the opening of Surah 1 and as the inter-surah marker interpreted as belonging to the end of the preceding surah's context. The same segment ID appears in two timeline events.
+In a live performance, phrases recited multiple times (such as the opening Basmalah vs. an inter-surah Basmalah) are distinct audio events and **MUST** be mapped to separate, unique segments. 
+
+However, legacy studio datasets often optimize file size by artificially reusing a single audio recording of the Basmalah before every Surah. The protocol supports importing these stitched datasets by allowing the same segment ID to appear in multiple distinct timeline events.
 
 ```json
 {
   "segments": [
-    { "id": "seg-basmala", "startMs": 0, "endMs": 3200, "label": "Basmala" }
+    { "id": "seg-studio-basmala", "startMs": 0, "endMs": 3200, "label": "Reused Studio Basmala" },
+    { "id": "seg-s1-a2", "startMs": 3200, "endMs": 8000 }
   ],
   "timeline": [
-    { "eventId": "evt-basmala-1-1", "ref": { "surah": 1, "ayah": 1 }, "segmentIds": ["seg-basmala"], "wordRange": null }
+    { "eventId": "evt-s1-b", "ref": { "type": "ayah", "surah": 1, "ayah": 1 }, "segmentIds": ["seg-studio-basmala"], "wordRange": null },
+    { "eventId": "evt-s1-a2", "ref": { "type": "ayah", "surah": 1, "ayah": 2 }, "segmentIds": ["seg-s1-a2"], "wordRange": null },
+    { "eventId": "evt-s2-b", "ref": { "type": "ayah", "surah": 2, "ayah": 0 }, "segmentIds": ["seg-studio-basmala"], "wordRange": null }
   ]
 }
 ```
