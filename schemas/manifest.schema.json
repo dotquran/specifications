@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotquran.org/schemas/manifest.schema.json",
+  "title": "dotquran Manifest",
+  "description": "Schema for manifest.json inside a dotquran (.qrn / .quran) archive. Validates reciter metadata, performance characteristics, audio asset declaration, and coverage range.",
+  "type": "object",
+  "required": ["specVersion", "id", "reciter", "performance", "audio", "coverage"],
+  "additionalProperties": false,
+  "properties": {
+
+    "specVersion": {
+      "type": "string",
+      "description": "dotquran spec version this manifest targets, in MAJOR.MINOR format.",
+      "pattern": "^\\d+\\.\\d+$",
+      "examples": ["1.0"]
+    },
+
+    "id": {
+      "type": "string",
+      "description": "Globally unique URN for this archive in the form urn:dotquran:rec:<reciter-slug>:<coverage-slug>:<date>.",
+      "pattern": "^urn:dotquran:rec:[a-z0-9-]+:[a-z0-9-]+:[0-9]{8}$",
+      "examples": ["urn:dotquran:rec:abdulbasit-abdussamad:surah-2:20260410"]
+    },
+
+    "reciter": {
+      "type": "object",
+      "description": "Information about the reciter.",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full reciter name in the archive's primary language.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "nameAr": {
+          "type": "string",
+          "description": "Full reciter name in Arabic script.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "nameEn": {
+          "type": "string",
+          "description": "Full reciter name transliterated in Latin script.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short biographical note. Maximum 500 characters.",
+          "maxLength": 500
+        },
+        "nationality": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 country code.",
+          "pattern": "^[A-Z]{2}$",
+          "examples": ["EG", "SA", "MA"]
+        }
+      }
+    },
+
+    "performance": {
+      "type": "object",
+      "description": "Characterizes the style of this specific tilawa performance.",
+      "required": ["tilawa", "qiraat"],
+      "additionalProperties": false,
+      "properties": {
+        "tilawa": {
+          "type": "string",
+          "description": "Recitation style.",
+          "enum": ["murattal", "mujawwad", "muallim", "other"]
+        },
+        "qiraat": {
+          "type": "string",
+          "description": "Qira'at (reading tradition).",
+          "enum": [
+            "hafs-an-asim",
+            "warsh-an-nafi",
+            "qalun-an-nafi",
+            "al-duri-an-abi-amr",
+            "ibn-kathir-al-makki",
+            "ibn-amir-al-shami",
+            "shu-ba-an-asim",
+            "hamza-al-kufi",
+            "al-kisai",
+            "khalaf-an-hamza",
+            "other"
+          ]
+        },
+        "riwaya": {
+          "type": "string",
+          "description": "Riwaya (transmission chain) within the qira'at.",
+          "examples": ["Hafs", "Warsh", "Qalun"]
+        },
+        "maqam": {
+          "type": "string",
+          "description": "Primary melodic mode (maqam) used, if applicable.",
+          "examples": ["Bayati", "Rast", "Hijaz", "Saba", "Nahawand", "Ajam"]
+        },
+        "notes": {
+          "type": "string",
+          "description": "Free-text performance notes. Maximum 1000 characters.",
+          "maxLength": 1000
+        }
+      }
+    },
+
+    "audio": {
+      "type": "object",
+      "description": "Declares the audio asset contained in this archive.",
+      "required": ["path", "format", "durationSeconds"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path to the audio file within the archive, relative to the archive root. MUST start with 'audio/'.",
+          "pattern": "^audio/.+$",
+          "examples": ["audio/recitation.opus"]
+        },
+        "format": {
+          "type": "string",
+          "description": "Audio format identifier.",
+          "enum": ["opus", "m4a", "mp3", "ogg", "wav", "flac"]
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "Total audio duration in seconds. Must be positive.",
+          "exclusiveMinimum": 0
+        },
+        "sampleRateHz": {
+          "type": "integer",
+          "description": "Audio sample rate in Hz.",
+          "minimum": 8000,
+          "maximum": 192000,
+          "examples": [48000, 44100, 22050]
+        },
+        "channels": {
+          "type": "integer",
+          "description": "Number of audio channels. 1 = mono, 2 = stereo.",
+          "enum": [1, 2]
+        },
+        "bitrateKbps": {
+          "type": "number",
+          "description": "Nominal bitrate in kbps for lossy formats.",
+          "exclusiveMinimum": 0,
+          "examples": [64, 128, 192]
+        },
+        "sha256": {
+          "type": "string",
+          "description": "Lowercase hex-encoded SHA-256 digest of the raw audio file bytes.",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+
+    "coverage": {
+      "type": "object",
+      "description": "Describes the Quranic text range covered by this archive.",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["full", "juz", "surah", "range"],
+          "description": "'full' = complete Quran; 'juz' = single juz; 'surah' = single surah; 'range' = arbitrary ayah range."
+        },
+        "juzNumber": {
+          "type": "integer",
+          "description": "Juz number (1–30). Required when type is 'juz'.",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "surahNumber": {
+          "type": "integer",
+          "description": "Surah number (1–114). Required when type is 'surah'.",
+          "minimum": 1,
+          "maximum": 114
+        },
+        "from": {
+          "$ref": "#/$defs/ayahRef",
+          "description": "Starting position. Required when type is 'surah' or 'range'."
+        },
+        "to": {
+          "$ref": "#/$defs/ayahRef",
+          "description": "Ending position. Required when type is 'range'."
+        }
+      },
+      "if":   { "properties": { "type": { "const": "juz" } } },
+      "then": { "required": ["juzNumber"] },
+      "else": {
+        "if":   { "properties": { "type": { "const": "surah" } } },
+        "then": { "required": ["surahNumber", "from"] },
+        "else": {
+          "if":   { "properties": { "type": { "const": "range" } } },
+          "then": { "required": ["from", "to"] }
+        }
+      }
+    },
+
+    "created": {
+      "type": "string",
+      "description": "UTC datetime at which this archive was produced, in ISO 8601 format.",
+      "format": "date-time",
+      "examples": ["2026-04-10T00:00:00Z"]
+    },
+
+    "generator": {
+      "type": "string",
+      "description": "Free-text string identifying the software that produced this archive.",
+      "maxLength": 200,
+      "examples": ["dotquran-tools/1.0.0"]
+    }
+  },
+
+  "$defs": {
+    "ayahRef": {
+      "type": "object",
+      "description": "A reference to a specific Ayah by surah and ayah number.",
+      "required": ["surah", "ayah"],
+      "additionalProperties": false,
+      "properties": {
+        "surah": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 114
+        },
+        "ayah": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

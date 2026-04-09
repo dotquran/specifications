@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotquran.org/schemas/sync.schema.json",
+  "title": "dotquran Synchronization Timeline",
+  "description": "Schema for sync.json inside a dotquran (.qrn / .quran) archive. Defines the relational, non-linear mapping between audio segments and the ordered recitation timeline, supporting ayah-level and optional word-level granularity.",
+  "type": "object",
+  "required": ["schemaVersion", "granularity", "segments", "timeline"],
+  "additionalProperties": false,
+  "properties": {
+
+    "schemaVersion": {
+      "type": "string",
+      "description": "Version of this sync schema in MAJOR.MINOR format. Consumers MUST reject a schemaVersion whose major component exceeds the highest major version they support.",
+      "pattern": "^\\d+\\.\\d+$",
+      "examples": ["1.0"]
+    },
+
+    "granularity": {
+      "type": "string",
+      "description": "The finest granularity level present in this sync file. 'ayah' means all wordRange fields in timeline events MUST be null. 'word' means timeline events SHOULD include wordRange.",
+      "enum": ["ayah", "word"]
+    },
+
+    "segments": {
+      "type": "array",
+      "description": "The audio segment catalog. Each entry defines a named, non-overlapping span of audio time. Segments MUST have unique IDs and MUST NOT overlap in their time ranges.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/segment" },
+      "unevaluatedItems": false
+    },
+
+    "timeline": {
+      "type": "array",
+      "description": "The ordered recitation event sequence. The array index defines recitation order: index 0 is the first recited event. Each event maps one Quranic text reference to one or more audio segments.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/timelineEvent" },
+      "unevaluatedItems": false
+    }
+  },
+
+  "$defs": {
+
+    "segmentId": {
+      "type": "string",
+      "description": "A segment identifier. MUST match [a-zA-Z0-9_-]+.",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+
+    "segment": {
+      "type": "object",
+      "description": "A named, non-overlapping span of audio time that can be referenced by one or more timeline events.",
+      "required": ["id", "startMs", "endMs"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/segmentId",
+          "description": "Unique identifier for this segment within the segments array."
+        },
+        "startMs": {
+          "type": "integer",
+          "description": "Start time of this segment in milliseconds, inclusive. MUST be >= 0.",
+          "minimum": 0
+        },
+        "endMs": {
+          "type": "integer",
+          "description": "End time of this segment in milliseconds, exclusive. MUST be strictly greater than startMs.",
+          "minimum": 1
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional human-readable label for tooling and debugging.",
+          "maxLength": 200
+        }
+      }
+    },
+
+    "ayahRef": {
+      "type": "object",
+      "description": "A reference to a specific Ayah by surah number and ayah number within that surah.",
+      "required": ["surah", "ayah"],
+      "additionalProperties": false,
+      "properties": {
+        "surah": {
+          "type": "integer",
+          "description": "Surah number. MUST be in the range [1, 114].",
+          "minimum": 1,
+          "maximum": 114
+        },
+        "ayah": {
+          "type": "integer",
+          "description": "Ayah number within the surah. MUST be >= 1. Producers SHOULD validate against the known ayah count for the given surah.",
+          "minimum": 1
+        }
+      }
+    },
+
+    "wordRange": {
+      "type": "object",
+      "description": "Specifies a range of words within an Ayah using zero-based word indices. Only present when granularity is 'word'.",
+      "required": ["wordIndexStart", "wordIndexEnd"],
+      "additionalProperties": false,
+      "properties": {
+        "wordIndexStart": {
+          "type": "integer",
+          "description": "Zero-based index of the first word of this event within its Ayah. MUST be >= 0.",
+          "minimum": 0
+        },
+        "wordIndexEnd": {
+          "type": "integer",
+          "description": "Zero-based index of the last word of this event within its Ayah, inclusive. MUST be >= wordIndexStart.",
+          "minimum": 0
+        }
+      }
+    },
+
+    "timelineEvent": {
+      "type": "object",
+      "description": "A single recitation event. Declares which Quranic text was recited (ref, optional wordRange) and which audio segment(s) contain that recitation (segmentIds). The same Ayah ref MAY appear in multiple events to model repetitions. The same segment ID MAY appear in multiple events.",
+      "required": ["eventId", "ref", "segmentIds", "wordRange"],
+      "additionalProperties": false,
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "description": "Unique identifier for this event within the timeline array. MUST match [a-zA-Z0-9_-]+.",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "ref": {
+          "$ref": "#/$defs/ayahRef",
+          "description": "The Quranic text reference (surah + ayah) for this event."
+        },
+        "segmentIds": {
+          "type": "array",
+          "description": "Ordered list of segment IDs whose audio, played in sequence, constitutes this event's audio. MUST contain at least one entry. Each ID MUST correspond to an entry in the top-level segments array.",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/segmentId" },
+          "unevaluatedItems": false
+        },
+        "wordRange": {
+          "description": "Word-level granularity for this event. MUST be null when the file-level granularity is 'ayah'. SHOULD be populated when granularity is 'word'.",
+          "oneOf": [
+            { "$ref": "#/$defs/wordRange" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}
