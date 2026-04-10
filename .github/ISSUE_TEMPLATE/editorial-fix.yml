@@ -1,0 +1,30 @@
+---
+name: Editorial Fix
+about: Typos, grammar, broken links, or non-normative formatting issues.
+title: "[editorial] "
+labels: ["editorial"]
+assignees: ""
+---
+
+## Affected Document
+
+**Document:**
+**Section / Line:**
+
+---
+
+## Current Text
+
+> (paste the text as it currently reads)
+
+---
+
+## Suggested Text
+
+> (paste the corrected text)
+
+---
+
+## Notes
+
+<!-- Optional. Explain if the correction is non-obvious. -->

@@ -1,0 +1,67 @@
+---
+name: Extension Proposal
+about: Propose a new field, feature, or structural change to the dotquran format.
+title: "[proposal] "
+labels: ["proposal"]
+assignees: ""
+---
+
+## Summary
+
+<!-- One paragraph describing what you want to add or change. -->
+
+---
+
+## Motivation
+
+<!--
+What real-world recitation scenario, use case, or implementation need does this address?
+Be specific. Reference Tajweed rules, qira'at variations, or known edge cases where relevant.
+-->
+
+---
+
+## Proposed Change
+
+<!--
+Describe the proposed addition or modification in detail.
+
+- Which document(s) would be affected? (archive structure / manifest / sync / schemas)
+- What new fields, objects, or rules would be added?
+- What existing rules, if any, would be amended?
+
+Include a representative JSON example if proposing a data model change.
+-->
+
+### Affected Documents
+
+- [ ] `specs/01-archive-structure.md`
+- [ ] `specs/02-manifest-format.md`
+- [ ] `specs/03-synchronization-protocol.md`
+- [ ] `schemas/manifest.schema.json`
+- [ ] `schemas/sync.schema.json`
+
+### Example
+
+```json
+// paste a representative example here
+```
+
+---
+
+## Backwards Compatibility
+
+<!--
+Is this change backwards-compatible with existing `.qrn` archives and conforming implementations?
+If not, explain the breaking change and why it is justified.
+-->
+
+---
+
+## Alternatives Considered
+
+<!-- What other approaches did you consider and why did you favor this one? -->
+
+---
+
+## Additional Context

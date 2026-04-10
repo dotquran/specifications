@@ -1,0 +1,40 @@
+---
+name: Ambiguity Report
+about: Normative language is technically valid but unclear enough to produce divergent implementations.
+title: "[ambiguity] "
+labels: ["ambiguity"]
+assignees: ""
+---
+
+## Affected Document and Section
+
+**Document:**
+**Section:**
+
+---
+
+## Ambiguous Statement
+
+<!-- Quote the exact sentence(s) you find ambiguous. -->
+
+> (paste quoted text here)
+
+---
+
+## Competing Interpretations
+
+<!-- Describe at least two plausible readings of the quoted text. Be specific about what each interpretation requires a conforming implementation to do differently. -->
+
+**Interpretation A:**
+
+**Interpretation B:**
+
+---
+
+## Preferred Resolution
+
+<!-- Optional. Which interpretation do you believe was intended, and why? Or what clarifying language would resolve the ambiguity? -->
+
+---
+
+## Additional Context

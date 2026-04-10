@@ -1,0 +1,49 @@
+---
+name: Specification Bug
+about: A normative rule in the spec is incorrect, contradictory, or unimplementable.
+title: "[spec-bug] "
+labels: ["spec-bug"]
+assignees: ""
+---
+
+## Affected Document and Section
+
+<!--
+Provide the exact document and section, e.g.:
+  specs/03-synchronization-protocol.md — §4.2 "Event Structure"
+-->
+
+**Document:**
+**Section:**
+
+---
+
+## Normative Statement
+
+<!-- Quote the exact sentence(s) from the specification that you believe are incorrect. -->
+
+> (paste quoted text here)
+
+---
+
+## Problem Description
+
+<!-- Explain why this rule is incorrect, contradictory with another rule, or cannot be correctly implemented. -->
+
+---
+
+## Impact
+
+<!-- What behavior does a conforming implementation exhibit if it follows this rule as written? -->
+
+---
+
+## Suggested Fix
+
+<!-- Optional. Propose amended normative language or a corrected schema. -->
+
+---
+
+## Additional Context
+
+<!-- Any references, related issues, or implementation experience that supports this report. -->
